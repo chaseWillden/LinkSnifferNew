@@ -4,6 +4,7 @@
  * Error Numbers:
  * 132: Ping Error
  * 133: Login Error
+ * 136: Dlap getresource error
  */
 
 package linksniffernew;
@@ -13,10 +14,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -32,11 +39,11 @@ public class LinkSnifferNew {
         * @ordered
         */
 
-       private List dCourseActivityDOM;
-       private final List errorLog = new ArrayList();
+       private List dCourseActivityDOM = new ArrayList();
+       private List errorLog = new ArrayList();
        private Document dCourseItemList;
        private Session session;
-       private List brokenLinks;
+       private List brokenLinks = new ArrayList();
        private String baseUrl;
 
        /**
@@ -45,7 +52,11 @@ public class LinkSnifferNew {
         * @generated
         */
        public LinkSnifferNew(){
-               super();
+           try {
+               this.session = new Session("Link Sniffer", "http://gls.agilix.com/dlap.ashx");
+           } catch (   TransformerConfigurationException | ParserConfigurationException ex) {
+               Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
+           }
        }
 
        /**
@@ -78,12 +89,11 @@ public class LinkSnifferNew {
         */
        
        public void addError(String errorNum, String errorMsg){
-           String[] tmp = {errorNum, errorMsg};
-           this.errorLog.add(tmp);
+           this.errorLog.add(errorNum + ": " + errorMsg);
        }
        
        /**
-        * Adds Errors to the Error log.
+        * Sets the base url
         * <!-- begin-user-doc -->
         * <!--  end-user-doc  -->
      * @param url
@@ -91,7 +101,7 @@ public class LinkSnifferNew {
         * @ordered
         */
        
-       public void addError(String url){
+       public void setUrl(String url){
            this.baseUrl = url;
        }
 
@@ -108,9 +118,13 @@ public class LinkSnifferNew {
         */
 
        public boolean login(String username, String password, String prefix) {
-            this.session = new Session("Link Sniffer", "http://gls.agilix.com/dlap.ashx");
             // Login
-            org.jsoup.nodes.Document result = session.Login(prefix, username, password);
+           org.jsoup.nodes.Document result = null;
+           try {
+               result = session.Login(prefix, username, password);
+           } catch (   ParserConfigurationException | TransformerException | IOException | SAXException ex) {
+               Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
+           }
             if (!Session.IsSuccess(result))
             {
                 addError("133", "Unable to login: " + Session.GetMessage(result));
@@ -132,10 +146,19 @@ public class LinkSnifferNew {
         */
 
        public String dlapGetResource(String entityid, String path) {
-            Map<String, String> params = new HashMap<>();
-            params.put("entityid", entityid);
-            params.put("path", path);
-            return session.Get("getresource", params);
+           if (entityid.isEmpty() || path.isEmpty()){
+               return null;
+           }
+           Map<String, String> params = new HashMap<>();
+           params.put("entityid", entityid);
+           params.put("path", path);
+           System.out.println(params.toString());
+           try {
+               return session.Get("getresource", params).toString();
+           } catch (   TransformerException | IOException | ParserConfigurationException | SAXException ex) {
+               addError("136", "Resource coun't be downloaded");
+           }
+           return null;
        }
 
        /**
@@ -146,7 +169,11 @@ public class LinkSnifferNew {
         */
 
        public void logout() {
-           this.session.Logout();
+           try {
+               this.session.Logout();
+           } catch (   TransformerException | IOException | ParserConfigurationException | SAXException ex) {
+               Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
+           }
        }
 
        /**
@@ -160,7 +187,7 @@ public class LinkSnifferNew {
         */
        
        public List getLinks(Elements elements){
-           List links = null;
+           List links = new ArrayList();
            for (Element ele : elements){
                if (!ele.attr("href").isEmpty()){
                    links.add(ele.attr("href"));
@@ -187,14 +214,29 @@ public class LinkSnifferNew {
            Elements hrefs = parsed.getElementsByAttribute("href");
            Elements srcs = parsed.getElementsByAttribute("src");
            List hrefList = getLinks(hrefs);
-           List srcList = getLinks(srcs);
-           for (int i = 0; i < hrefList.size(); i++){
-               String url = formatUrl(hrefList.get(i).toString(), true);
-               if (!pingUrl(url)){
-                   this.brokenLinks.add("url=" + url + "&activity=" + activity);
+           List srcList = getLinks(srcs);    
+           if (!hrefList.isEmpty()){
+               int hrefsize = hrefList.size();
+               for (int i = 0; i < hrefsize; i++){
+                   String url = formatUrl(hrefList.get(i).toString(), true);
+                   if (!pingUrl(url)){
+                       this.brokenLinks.add("url=" + url + "&activity=" + activity);
+                   }
                }
            }
+           if (!srcList.isEmpty()){
+               int srcsize = srcList.size();
+               for (int i = 0; i < srcsize; i++){
+                   String url = formatUrl(srcList.get(i).toString(), true);
+                   if (!pingUrl(url)){
+                       this.brokenLinks.add("url=" + url + "&activity=" + activity);
+                   }
+               }
+           }
+           linkCount++;
        }
+       
+       protected int linkCount = 0;
 
        /**
         * get list of all items within a course using the Brainhoney Dlap call "getitemlist" and setting it into a global variable which can be accessed by getItemInfo
@@ -210,7 +252,11 @@ public class LinkSnifferNew {
            Map<String, String> getitemlist = new HashMap<>();
            getitemlist.put("entityid", courseId);
            session.setIsHtml(true);
-           this.dCourseItemList = session.Get("getitemlist", getitemlist);
+           try {
+               this.dCourseItemList = session.Get("getitemlist", getitemlist);
+           } catch (   TransformerException | IOException | ParserConfigurationException | SAXException ex) {
+               Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
+           }
        }
        
        /**
@@ -249,7 +295,10 @@ public class LinkSnifferNew {
         */
 
        public String formatUrl(String address, boolean https) {
-               if ((address.contains("https://") && https) || (address.contains("http://") && !https)){
+               if (address.contains("[~]") || address.contains("javascript:")){
+                   return "https://google.com";
+               }
+               else if ((address.contains("https://") && https) || (address.contains("http://") && !https)){
                    return address;
                }
                else if (address.contains("https://") && !https){
@@ -281,11 +330,42 @@ public class LinkSnifferNew {
        public String displayBrokenLinks() {
             // TODO : to implement
            String display = "";
+           if (this.brokenLinks.isEmpty()){
+               return "";
+           }
            int size = this.brokenLinks.size();
            for (int i = 0; i < size; i++){
                String linkInfo = this.brokenLinks.get(i).toString();
+               display += linkInfo;
            }
-           return "";	
-       }
+           return display;	
+       }  
        
+       public void run(){
+           Document cil = getCourseItemList();
+           Elements items = cil.getElementsByTag("item");
+           for (Element item : items){               
+               Elements typeTag = item.getElementsByTag("type");
+               if (!typeTag.isEmpty()){
+                    String itemType = typeTag.get(0).text();
+                    if (itemType.contains("Resource")){
+                        String entityid = item.attr("resourceentityid").split(",")[0];
+                        String path = item.getElementsByTag("href").text();
+                        String id = item.attr("id");
+                        String content = dlapGetResource(entityid, path);
+                        if (content != null){
+                            processBrokenLinks(content, id);
+                            System.out.println("Links Checked: " + linkCount);
+                        }  
+                    }
+               }       
+           }           
+           String display = displayBrokenLinks();
+           if (display.isEmpty()){
+               System.out.println("Your Course contains no broken links");
+           }
+           else{
+               System.out.println(display);
+           }
+       }
 }

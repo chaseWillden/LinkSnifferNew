@@ -1,4 +1,4 @@
-package LinkSnifferNew;
+package linksniffernew;
 
 import java.io.*;
 import java.net.*;
@@ -21,7 +21,6 @@ import org.jsoup.select.Elements;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class Session {
@@ -113,7 +112,7 @@ public class Session {
     }
 
     // Makes a raw request to DLAP
-    private org.jsoup.nodes.Document Request(String query, Document postData)
+    org.jsoup.nodes.Document Request(String query, Document postData)
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         if (query.contains("path=ht")) {
             return null;
@@ -163,7 +162,6 @@ public class Session {
         InputStream responseStream = connection.getInputStream();
         String s = getStringFromInputStream(responseStream);
         System.out.println("Convert: " + s);
-        System.out.println("Parsing Document: ");
         org.jsoup.nodes.Document response = null;
         if (isHtml) {
             response = Jsoup.parse(s);
