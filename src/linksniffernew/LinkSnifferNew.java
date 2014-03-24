@@ -72,6 +72,9 @@ public class LinkSnifferNew {
        public boolean pingUrl(String address){
             try {
                 System.out.println("Address pinged: " + address);
+                if (address.contains("///")){
+                    return false;
+                }
                 return Jsoup.connect(address).execute().statusCode() == 200;
             } catch (IOException ex) {
                 addError("132", "Unable to pings the address: " + address);
@@ -307,9 +310,6 @@ public class LinkSnifferNew {
                    // Not external DB
                    return "https://google.com";
                }
-               else if (address.substring(0, 2).contains("/") || !address.substring(0, 2).contains("ht")){
-                   return "https://google.com";
-               }
                else if ((address.contains("https://") && https) || (address.contains("http://") && !https)){
                    return address;
                }
@@ -324,6 +324,10 @@ public class LinkSnifferNew {
                }
                else if (https){
                    return "https://" + address;
+               }
+               else if (address.substring(0, 2).contains("/")){
+                   // Need to fix
+                   return "https://bing.com";
                }
                else{
                    return address;
@@ -341,9 +345,9 @@ public class LinkSnifferNew {
 
        public String displayBrokenLinks() {
             // TODO : to implement
-           String display = "";
+           String display = "==== Broken Links:\n";
            if (this.brokenLinks.isEmpty()){
-               return "";
+               return "==== No broken links";
            }
            int size = this.brokenLinks.size();
            for (int i = 0; i < size; i++){

@@ -20,6 +20,7 @@ public class Test {
                ls.setUrl("https://byui-beta.brainhoney.com/Frame/Component/CoursePlayer?");
                ls.dlapGetItemList("17236636");
                ls.run();
+               System.out.println(ls.displayBrokenLinks());
            }           
        }
 }
