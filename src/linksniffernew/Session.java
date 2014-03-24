@@ -161,7 +161,6 @@ public class Session {
         }
         InputStream responseStream = connection.getInputStream();
         String s = getStringFromInputStream(responseStream);
-        System.out.println("Convert: " + s);
         org.jsoup.nodes.Document response = null;
         if (isHtml) {
             response = Jsoup.parse(s);

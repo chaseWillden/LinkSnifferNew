@@ -71,6 +71,7 @@ public class LinkSnifferNew {
      
        public boolean pingUrl(String address){
             try {
+                System.out.println("Address pinged: " + address);
                 return Jsoup.connect(address).execute().statusCode() == 200;
             } catch (IOException ex) {
                 addError("132", "Unable to pings the address: " + address);
@@ -120,6 +121,9 @@ public class LinkSnifferNew {
        public boolean login(String username, String password, String prefix) {
             // Login
            org.jsoup.nodes.Document result = null;
+           if (username.isEmpty() || password.isEmpty() || prefix.isEmpty()){
+               return false;
+           }
            try {
                result = session.Login(prefix, username, password);
            } catch (   ParserConfigurationException | TransformerException | IOException | SAXException ex) {
@@ -154,9 +158,13 @@ public class LinkSnifferNew {
            params.put("path", path);
            System.out.println(params.toString());
            try {
-               return session.Get("getresource", params).toString();
+               Document r = session.Get("getresource", params);
+               if (r == null){
+                   return null;
+               }
+               return r.toString();
            } catch (   TransformerException | IOException | ParserConfigurationException | SAXException ex) {
-               addError("136", "Resource coun't be downloaded");
+               addError("136", "Resource couldn't be downloaded");
            }
            return null;
        }
@@ -296,6 +304,10 @@ public class LinkSnifferNew {
 
        public String formatUrl(String address, boolean https) {
                if (address.contains("[~]") || address.contains("javascript:")){
+                   // Not external DB
+                   return "https://google.com";
+               }
+               else if (address.substring(0, 2).contains("/") || !address.substring(0, 2).contains("ht")){
                    return "https://google.com";
                }
                else if ((address.contains("https://") && https) || (address.contains("http://") && !https)){
@@ -355,7 +367,7 @@ public class LinkSnifferNew {
                         String content = dlapGetResource(entityid, path);
                         if (content != null){
                             processBrokenLinks(content, id);
-                            System.out.println("Links Checked: " + linkCount);
+                            System.out.println("External Links Checked: " + linkCount);
                         }  
                     }
                }       
