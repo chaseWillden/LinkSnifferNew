@@ -10,12 +10,15 @@
 package linksniffernew;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -45,6 +48,13 @@ public class LinkSnifferNew {
        private Session session;
        private List brokenLinks = new ArrayList();
        private String baseUrl;
+       private ObservableList<String> listCourses = FXCollections.observableArrayList ("");
+       private List allCourses = new ArrayList();
+       private int totalPinged = 0;
+       private int totalExt = 0;
+       private int totalInt = 0;
+       private double totalItems = 0.0;
+       private double progress = 0.0;
 
        /**
         * <!-- begin-user-doc -->
@@ -70,12 +80,14 @@ public class LinkSnifferNew {
         */
      
        public boolean pingUrl(String address){
+           this.totalPinged++;
             try {
-                System.out.println("Address pinged: " + address);
                 if (address.contains("///")){
                     return false;
                 }
-                return Jsoup.connect(address).execute().statusCode() == 200;
+                int status = Jsoup.connect(address).ignoreContentType(true).execute().statusCode();
+                return status < 400;
+                
             } catch (IOException ex) {
                 addError("132", "Unable to pings the address: " + address);
             }
@@ -159,7 +171,6 @@ public class LinkSnifferNew {
            Map<String, String> params = new HashMap<>();
            params.put("entityid", entityid);
            params.put("path", path);
-           System.out.println(params.toString());
            try {
                Document r = session.Get("getresource", params);
                if (r == null){
@@ -231,7 +242,7 @@ public class LinkSnifferNew {
                for (int i = 0; i < hrefsize; i++){
                    String url = formatUrl(hrefList.get(i).toString(), true);
                    if (!pingUrl(url)){
-                       this.brokenLinks.add("url=" + url + "&activity=" + activity);
+                       this.brokenLinks.add("\nurl=" + url + "&activity=" + activity);
                    }
                }
            }
@@ -240,7 +251,7 @@ public class LinkSnifferNew {
                for (int i = 0; i < srcsize; i++){
                    String url = formatUrl(srcList.get(i).toString(), true);
                    if (!pingUrl(url)){
-                       this.brokenLinks.add("url=" + url + "&activity=" + activity);
+                       this.brokenLinks.add("\nurl=" + url + "&activity=" + activity);
                    }
                }
            }
@@ -306,30 +317,41 @@ public class LinkSnifferNew {
         */
 
        public String formatUrl(String address, boolean https) {
-               if (address.contains("[~]") || address.contains("javascript:")){
+               if (address.contains("[~]")){
                    // Not external DB
+                   this.totalInt++;
                    return "https://google.com";
                }
+               else if (address.contains("javascript:")){
+                   this.totalInt++;
+                   return "cos";
+               }
                else if ((address.contains("https://") && https) || (address.contains("http://") && !https)){
+                   this.totalExt++;
                    return address;
                }
                else if (address.contains("https://") && !https){
+                   this.totalExt++;
                    return "http://" + address.split("https://")[1];
                }
                else if (address.contains("http://") && https){
                    return "https://" + address.split("http://")[1];
                }
                else if (address.contains("//") && https){
+                   this.totalExt++;
                    return "https:" + address;
                }
                else if (https){
+                   this.totalExt++;
                    return "https://" + address;
                }
                else if (address.substring(0, 2).contains("/")){
                    // Need to fix
+                   this.totalInt++;
                    return "https://bing.com";
                }
                else{
+                   this.totalExt++;
                    return address;
                }	
        }
@@ -345,22 +367,55 @@ public class LinkSnifferNew {
 
        public String displayBrokenLinks() {
             // TODO : to implement
-           String display = "==== Broken Links:\n";
+           String display = "\n==== Analytics:";
+           display += "\nTotal Links Pinged: " + this.totalPinged;
+           display += "\nTotal total external links: " + this.totalExt;
+           display += "\nTotal total internal links: " + this.totalInt;
            if (this.brokenLinks.isEmpty()){
-               return "==== No broken links";
+               return "\n==== No broken links";
            }
+           display += "\n\n==== Broken Links:";
+           display += "\nTotal broken links: " + this.brokenLinks.size() + "\n";
            int size = this.brokenLinks.size();
            for (int i = 0; i < size; i++){
                String linkInfo = this.brokenLinks.get(i).toString();
                display += linkInfo;
            }
            return display;	
-       }  
+       }
+       
+       public String progress(){
+           DecimalFormat df = new DecimalFormat("#.##");
+           return df.format((++this.progress / this.totalItems) * 100.0);
+       }
+       
+       public boolean getDomainCourses(String domainid){
+           Map<String, String> params = new HashMap<>();
+           params.put("domainid", domainid);
+           try {
+               Document all = session.Get("listcourses", params);
+               if (all.getElementsByTag("response").get(0).attr("code").equals("OK")){
+                   Elements courses = all.getElementsByTag("course");
+                   for (Element course : courses){
+                       this.listCourses.add(course.attr("title") + "::"+ course.attr("id"));
+                   }
+                   return true;
+               }
+               else{
+                   return false;
+               }
+           } catch (TransformerException | IOException | ParserConfigurationException | SAXException ex) {
+               addError("483", "Couldn't get list of courses");
+           }
+           return false;
+       }
        
        public void run(){
            Document cil = getCourseItemList();
+           this.totalItems = cil.getElementsByTag("item").size();
            Elements items = cil.getElementsByTag("item");
-           for (Element item : items){               
+           for (Element item : items){           
+               System.out.println("Progress" + progress() + "%");
                Elements typeTag = item.getElementsByTag("type");
                if (!typeTag.isEmpty()){
                     String itemType = typeTag.get(0).text();
@@ -371,7 +426,6 @@ public class LinkSnifferNew {
                         String content = dlapGetResource(entityid, path);
                         if (content != null){
                             processBrokenLinks(content, id);
-                            System.out.println("External Links Checked: " + linkCount);
                         }  
                     }
                }       
@@ -383,5 +437,9 @@ public class LinkSnifferNew {
            else{
                System.out.println(display);
            }
+       }
+       
+       public ObservableList<String> getAllCourses(){
+           return this.listCourses;
        }
 }
