@@ -55,6 +55,7 @@ public class LinkSnifferNew {
        private int totalInt = 0;
        private double totalItems = 0.0;
        private double progress = 0.0;
+       private boolean isRunning = true;
 
        /**
         * <!-- begin-user-doc -->
@@ -324,7 +325,7 @@ public class LinkSnifferNew {
                }
                else if (address.contains("javascript:")){
                    this.totalInt++;
-                   return "cos";
+                   return "https://bing.com";
                }
                else if ((address.contains("https://") && https) || (address.contains("http://") && !https)){
                    this.totalExt++;
@@ -392,6 +393,7 @@ public class LinkSnifferNew {
        public boolean getDomainCourses(String domainid){
            Map<String, String> params = new HashMap<>();
            params.put("domainid", domainid);
+           params.put("limit", "0");
            try {
                Document all = session.Get("listcourses", params);
                if (all.getElementsByTag("response").get(0).attr("code").equals("OK")){
@@ -408,6 +410,10 @@ public class LinkSnifferNew {
                addError("483", "Couldn't get list of courses");
            }
            return false;
+       }
+       
+       public boolean isRunning(){
+           return this.isRunning;
        }
        
        public void run(){
@@ -437,6 +443,7 @@ public class LinkSnifferNew {
            else{
                System.out.println(display);
            }
+           this.isRunning = false;
        }
        
        public ObservableList<String> getAllCourses(){
