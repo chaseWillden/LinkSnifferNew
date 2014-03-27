@@ -6,13 +6,16 @@
 
 package linksniffernew;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.ListModel;
+import org.jsoup.Jsoup;
 
 /**
  *
@@ -63,7 +66,6 @@ public class LinkGUI extends javax.swing.JFrame {
         jTextArea1 = new javax.swing.JTextArea();
         step1 = new javax.swing.JLabel();
         loginBtn = new javax.swing.JButton();
-        errorMsg = new javax.swing.JLabel();
         step2 = new javax.swing.JLabel();
         domainid = new javax.swing.JTextField();
         domainBtn = new javax.swing.JButton();
@@ -102,11 +104,14 @@ public class LinkGUI extends javax.swing.JFrame {
             }
         });
 
-        errorMsg.setForeground(new java.awt.Color(255, 0, 0));
-
         step2.setText("Step 2:");
 
         domainid.setText("Domain Id");
+        domainid.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                domainidActionPerformed(evt);
+            }
+        });
 
         domainBtn.setText("Get");
         domainBtn.addActionListener(new java.awt.event.ActionListener() {
@@ -169,20 +174,17 @@ public class LinkGUI extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(21, 21, 21)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(step2)
+                            .addComponent(step1)
+                            .addComponent(step3))
+                        .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(domainid)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(50, 50, 50)
-                                .addComponent(errorMsg, javax.swing.GroupLayout.PREFERRED_SIZE, 173, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(21, 21, 21)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(step2)
-                                    .addComponent(step1)
-                                    .addComponent(step3))
-                                .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(loginBtn)
-                                    .addComponent(domainid))))
+                                .addComponent(loginBtn)
+                                .addGap(0, 101, Short.MAX_VALUE)))
                         .addGap(18, 18, 18)
                         .addComponent(domainBtn))
                     .addGroup(layout.createSequentialGroup()
@@ -235,8 +237,7 @@ public class LinkGUI extends javax.swing.JFrame {
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(sniffProgress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(12, 12, 12)
-                        .addComponent(errorMsg)))
+                        .addGap(12, 12, 12)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -247,17 +248,17 @@ public class LinkGUI extends javax.swing.JFrame {
     private void loginBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginBtnActionPerformed
         // TODO add your handling code here:
         if (!loginPopup()){
-            this.errorMsg.setText("Login Failure");
+            this.displayArea.setText("Login Failure");
         }
         else{
-
+            this.displayArea.setText("Welcome to Link Sniffer, " + ls.getUser());
         }
     }//GEN-LAST:event_loginBtnActionPerformed
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
         // TODO add your handling code here:
         if (!loginPopup()){
-            this.errorMsg.setText("Login Failure");
+            this.displayArea.setText("Login Failure");
         }
         else{
  
@@ -266,57 +267,75 @@ public class LinkGUI extends javax.swing.JFrame {
 
     private void domainBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_domainBtnActionPerformed
         // TODO add your handling code here:
-        if (ls.getDomainCourses(this.domainid.getText())){
-            allCourses = ls.getAllCourses();
-            this.errorMsg.setText("");
-            addToList();
-            this.repaint();
-        }
-        else{
-            this.errorMsg.setText("Invalid Domain Id");
-        }        
+        Thread get = new Thread(){
+            @Override
+            public void run() {
+                if (ls.getDomainCourses(domainid.getText())){
+                    allCourses = ls.getAllCourses();
+                    displayArea.setText("");
+                    addToList();
+                    repaint();
+                }
+                else{
+                    displayArea.setText("Invalid Domain Id");
+                }
+            }  
+        };
+        get.start();
+        displayArea.setText("Getting Courses...");       
     }//GEN-LAST:event_domainBtnActionPerformed
 
     private void auditBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_auditBtnActionPerformed
         // TODO add your handling code here:
+        this.ls.reset();
         final String courseid = this.pickCourse.getSelectedValue().toString().split("::")[1];
-        Thread audit = new Thread(){
+        final Thread audit = new Thread(){
             @Override
             public void run() {
-                try {
-                    ls.dlapGetItemList(courseid);
-                    ls.run();
-                    showBroken(ls.displayBrokenLinks());
-                    Thread.sleep(1000);
-
-                } catch(InterruptedException v) {
-                    System.out.println(v);
-                }
+                ls.dlapGetItemList(courseid);
+                ls.run();
+                showBroken(ls.displayBrokenLinks());
+                this.interrupt();
             }  
         };  
         Thread prog = new Thread(){
             @Override
             public void run() {
-                try {
-                    for (int i = 0; i < 1000; i++){                        
-                        Thread.sleep(1000);
-                        if (ls.isRunning()){
-                            setProgress();
-                        }
-                    }                   
-
-                } catch(InterruptedException v) {
-                    System.out.println(v);
+                while(audit.isAlive()){
+                    if (ls.isRunning()){
+                        setProgress();
+                    }
                 }
             }  
         };
         audit.start();
         prog.start();
+        displayArea.setText("Auditing course, please wait...");
     }//GEN-LAST:event_auditBtnActionPerformed
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         // TODO add your handling code here:
     }//GEN-LAST:event_formWindowOpened
+
+    private void domainidActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_domainidActionPerformed
+        // TODO add your handling code here:
+        Thread get = new Thread(){
+            @Override
+            public void run() {
+                if (ls.getDomainCourses(domainid.getText())){
+                    allCourses = ls.getAllCourses();
+                    displayArea.setText("");
+                    addToList();
+                    repaint();
+                }
+                else{
+                    displayArea.setText("Invalid Domain Id");
+                }
+            }  
+        };
+        get.start();
+        displayArea.setText("Getting Courses...");
+    }//GEN-LAST:event_domainidActionPerformed
 
     public void showBroken(String brokens){
         
@@ -360,19 +379,14 @@ public class LinkGUI extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(LinkGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(LinkGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(LinkGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(LinkGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 new LinkGUI().setVisible(true);
             }
@@ -384,7 +398,6 @@ public class LinkGUI extends javax.swing.JFrame {
     private javax.swing.JTextArea displayArea;
     private javax.swing.JButton domainBtn;
     private javax.swing.JTextField domainid;
-    private javax.swing.JLabel errorMsg;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;

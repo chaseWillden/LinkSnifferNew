@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -50,15 +48,17 @@ public class LinkSnifferNew {
     private Session session;
     private List brokenLinks = new ArrayList();
     private String baseUrl;
-    private ObservableList<String> listCourses = FXCollections.observableArrayList("");
     private List allCourses = new ArrayList();
+    private List listCourses = new ArrayList();
     private int totalPinged = 0;
     private int totalExt = 0;
     private int totalInt = 0;
+    private int totalImg = 0;
     private double totalItems = 0.0;
     private double progress = 1.0;
     private boolean isRunning = false;
     private String baseCourseid = "";
+    private String uName = "";
 
     /**
      * <!-- begin-user-doc -->
@@ -71,7 +71,23 @@ public class LinkSnifferNew {
             Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
+    public void reset(){
+        dCourseActivityDOM = new ArrayList();
+        errorLog = new ArrayList();
+        dCourseItemList = null;
+        brokenLinks = new ArrayList();
+        baseUrl = "";
+        allCourses = new ArrayList();
+        listCourses = new ArrayList();
+        totalPinged = 0;
+        totalExt = 0;
+        totalInt = 0;
+        totalItems = 0.0;
+        progress = 1.0;
+        isRunning = false;
+        baseCourseid = "";
+    }
     /**
      * A function to ping the url.<div><br></div><div>Returns true if a 200
      * message is returned.</div>
@@ -145,6 +161,8 @@ public class LinkSnifferNew {
         }
         try {
             result = session.Login(prefix, username, password);
+            
+            System.out.println(result);
         } catch (ParserConfigurationException | TransformerException | IOException | SAXException ex) {
             Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -152,8 +170,12 @@ public class LinkSnifferNew {
             addError("133", "Unable to login: " + Session.GetMessage(result));
             return false;
         }
-
+        this.uName = result.getElementsByTag("user").get(0).attr("firstname") + " " + result.getElementsByTag("user").get(0).attr("lastname");
         return true;
+    }
+    
+    public String getUser(){
+        return this.uName;
     }
 
     /**
@@ -261,6 +283,11 @@ public class LinkSnifferNew {
         }
         linkCount++;
     }
+    
+    public void getImages(String courseContent, String id){
+        Document parsed = Jsoup.parse(courseContent);
+        this.totalImg += parsed.getElementsByTag("img").size();
+    }
 
     protected int linkCount = 0;
 
@@ -326,48 +353,25 @@ public class LinkSnifferNew {
     public String formatUrl(String address, boolean https) {
 
         if (address.contains("[~]")) {
-            // Not external DB
             this.totalInt++;
-            return "https://google.com";
+            String newForm = "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=assets" + address.split("]")[1];
+            return newForm;
         } else if (address.contains("javascript:")) {
             this.totalInt++;
+            if (address.contains("navToItem")){
+                String id = address.split("'")[1];                
+                id = id.split("'")[0];
+                return "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=Templates/Data/" + id + "/index.html";
+            }
             return "https://bing.com";
         }
         else if (address.contains(" ") || address.substring(0, 1).contains("#")){
-            address = "https://google.com";
+            return "https://google.com";
         }
         else if (address.substring(0, 2).contains("//")){
-            address = "https:" + address;
+            return "http:" + address;
         }
-        
-        try {
-            address = new URL(address).toString();
-
-        } catch (MalformedURLException ex) {
-            Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        
-        if ((address.contains("https://") && https) || (address.contains("http://") && !https)) {
-            this.totalExt++;
-            return address;
-        } else if (address.contains("https://") && !https) {
-            this.totalExt++;
-            return "http://" + address.split("https://")[1];
-        } else if (address.contains("http://") && https) {
-            return "https://" + address.split("http://")[1];
-        } else if (address.contains("//") && https) {
-            this.totalExt++;
-            return "https:" + address;
-        } else if (https) {
-            this.totalExt++;
-            return "https://" + address;
-        } else if (address.substring(0, 2).contains("/")) {
-            // Need to fix
-            this.totalInt++;
-            return "https://bing.com";
-        } else {
-            this.totalExt++;
+        else{
             return address;
         }
     }
@@ -387,6 +391,8 @@ public class LinkSnifferNew {
         display += "\nTotal Links Pinged: " + this.totalPinged;
         display += "\nTotal total external links: " + this.totalExt;
         display += "\nTotal total internal links: " + this.totalInt;
+        display += "\nTotal Images: " + this.totalImg;
+        
         if (this.brokenLinks.isEmpty()) {
             return "\n==== No broken links";
         }
@@ -402,7 +408,7 @@ public class LinkSnifferNew {
 
     public double progress() {
         DecimalFormat df = new DecimalFormat("#.##");
-        return Double.parseDouble(df.format((++this.progress / this.totalItems) * 100));
+        return Double.parseDouble(df.format((this.progress / this.totalItems) * 100));
     }
 
     public boolean getDomainCourses(String domainid) {
@@ -436,6 +442,7 @@ public class LinkSnifferNew {
         this.isRunning = true;
         Elements items = cil.getElementsByTag("item");
         for (Element item : items) {
+            this.progress++;
             System.out.println("Progress" + progress() + "%");
             Elements typeTag = item.getElementsByTag("type");
             if (!typeTag.isEmpty()) {
@@ -447,6 +454,7 @@ public class LinkSnifferNew {
                     String content = dlapGetResource(entityid, path);
                     if (content != null) {
                         processBrokenLinks(content, id);
+                        getImages(content, id);
                     }
                 }
             }
@@ -460,7 +468,7 @@ public class LinkSnifferNew {
         this.isRunning = false;
     }
 
-    public ObservableList<String> getAllCourses() {
+    public List getAllCourses() {
         return this.listCourses;
     }
 }
