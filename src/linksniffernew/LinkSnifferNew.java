@@ -101,7 +101,7 @@ public class LinkSnifferNew {
     public boolean pingUrl(String address) {
         this.totalPinged++;
         try {
-            if (address.contains("///") || address.isEmpty() || address == null) {
+            if (address.contains("///") || address.isEmpty() || address == null || address.contains("data:")) {
                 return false;
             }
             int status = Jsoup.connect(address).ignoreContentType(true).execute().statusCode();
@@ -358,11 +358,13 @@ public class LinkSnifferNew {
             Document a = session.Get("getresource", newParams);
             this.totalDlap++;
             if (a == null){
-                return "https://google.com/chase.html";
+                // Broken on purpose
+                return "https://google.com/brokenOnPurpose.html";
             }            
             if (a.getElementById("header") != null){
                 if (a.getElementById("header").toString().contains("Error")){
-                    return "https://google.com";
+                    // Broken on purpose
+                    return "https://google.com/brokenOnPurpose.html";
                 }
             }
             else{
@@ -372,7 +374,7 @@ public class LinkSnifferNew {
         }   catch (TransformerException | IOException | ParserConfigurationException | SAXException ex) {
             Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return null;
+        return "https://google.com";
     }
     
     /**
@@ -388,12 +390,22 @@ public class LinkSnifferNew {
      */
     public String formatUrl(String address, boolean https) {
 
-        if (address.contains("[~]")) {
-            this.totalInt++;
-            String path = address.split("]")[1];
-            if (address.split("]")[1].contains("?")){
-                path = address.split("]")[1].split("\\?")[0];
+        if (address.contains("[~]") || address.matches("(.*)%5B%7E%5D(.*)")) {
+            String path = "";
+            if (address.contains("[~]")){
+                path = address.split("]")[1];
+                if (address.split("]")[1].contains("?")){
+                    path = address.split("]")[1].split("\\?")[0];
+                }
             }
+            else if (address.matches("(.*)%5B%7E%5D(.*)")){
+                path = address.split("%5D")[1];
+                if (address.split("%5D")[1].contains("?")){
+                    path = address.split("]")[1].split("\\?")[0];
+                }
+            }
+            this.totalInt++;
+            
             String newForm = "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=assets" + path;
             return newForm;
         } else if (address.contains("javascript:")) {
@@ -401,12 +413,12 @@ public class LinkSnifferNew {
             if (address.contains("navToItem")){
                 String id = address.split("'")[1];                
                 id = id.split("'")[0];
-                bhLink(id);
-                return "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=Templates/Data/" + id + "/index.html";
+                return bhLink(id);
             }
             return "https://bing.com";
         }
         else if (address.contains(" ") || address.substring(0, 1).contains("#")){
+            // Check for anchor links
             return "https://google.com";
         }
         else if (address.substring(0, 2).contains("//")){
