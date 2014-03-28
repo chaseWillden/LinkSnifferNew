@@ -6,16 +6,17 @@
 
 package linksniffernew;
 
-import java.io.IOException;
+import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.ListModel;
-import org.jsoup.Jsoup;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 /**
  *
@@ -26,6 +27,7 @@ public class LinkGUI extends javax.swing.JFrame {
     private final LinkSnifferNew ls = new LinkSnifferNew();
     private List allCourses = new ArrayList();
     private ListModel listModel;
+    private int selected = 0;
     
     /**
      * Creates new form LinkGUI
@@ -35,17 +37,34 @@ public class LinkGUI extends javax.swing.JFrame {
     }
     
     public boolean loginPopup(){
-        JTextField username = new JTextField();
+        final JTextField username = new JTextField();
         JTextField password = new JPasswordField();
         JTextField prefix = new JTextField();
-        username.requestFocus();
-        Object[] message = {
-            "Username:", username,
-            "Password:", password,
-            "Prefix:", prefix
-        };
+        JPanel gridLayout = new JPanel(new GridLayout(6, 1));
+        gridLayout.add(new JLabel("Username:"));
+        gridLayout.add(username);
+        gridLayout.add(new JLabel("Password:"));
+        gridLayout.add(password);
+        gridLayout.add(new JLabel("Prefix:"));
+        gridLayout.add(prefix);
 
-        int option = JOptionPane.showConfirmDialog(null, message, "Login", JOptionPane.OK_CANCEL_OPTION);
+        username.addAncestorListener(new AncestorListener() {
+            @Override
+            public void ancestorRemoved(AncestorEvent pEvent) {
+            }
+
+            @Override
+            public void ancestorMoved(AncestorEvent pEvent) {
+            }
+
+            @Override
+            public void ancestorAdded(AncestorEvent pEvent) {
+                username.requestFocusInWindow();
+            }
+        });
+
+        int option = JOptionPane.showConfirmDialog(null, gridLayout, "Login",
+            JOptionPane.OK_CANCEL_OPTION);
         if (option == JOptionPane.OK_OPTION) {
             return ls.login(username.getText(), password.getText(), prefix.getText());
         } else {
@@ -62,31 +81,25 @@ public class LinkGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
-        step1 = new javax.swing.JLabel();
         loginBtn = new javax.swing.JButton();
-        step2 = new javax.swing.JLabel();
         domainid = new javax.swing.JTextField();
         domainBtn = new javax.swing.JButton();
         pickScroll = new javax.swing.JScrollPane();
         pickCourse = new javax.swing.JList();
-        step3 = new javax.swing.JLabel();
-        step4 = new javax.swing.JLabel();
         auditBtn = new javax.swing.JButton();
         sniffProgress = new javax.swing.JProgressBar();
-        jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         displayArea = new javax.swing.JTextArea();
         jLabel1 = new javax.swing.JLabel();
+        search = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem3 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
-
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane2.setViewportView(jTextArea1);
+        jMenuItem2 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -95,18 +108,14 @@ public class LinkGUI extends javax.swing.JFrame {
             }
         });
 
-        step1.setText("Step 1:");
-
         loginBtn.setText("Login");
+        loginBtn.setToolTipText("Login to Agilix");
         loginBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 loginBtnActionPerformed(evt);
             }
         });
 
-        step2.setText("Step 2:");
-
-        domainid.setText("Domain Id");
         domainid.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 domainidActionPerformed(evt);
@@ -125,34 +134,55 @@ public class LinkGUI extends javax.swing.JFrame {
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
+        pickCourse.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                pickCourseKeyPressed(evt);
+            }
+        });
         pickScroll.setViewportView(pickCourse);
 
-        step3.setText("Step 3:");
-
-        step4.setText("Step 4:");
-
-        auditBtn.setText("Audit");
+        auditBtn.setText("Start");
         auditBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 auditBtnActionPerformed(evt);
             }
         });
 
-        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText("Link Sniffer Progress");
-
         displayArea.setColumns(20);
         displayArea.setRows(5);
         jScrollPane1.setViewportView(displayArea);
 
-        jLabel1.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Audit Area");
+
+        search.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                searchActionPerformed(evt);
+            }
+        });
+        search.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                searchKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                searchKeyTyped(evt);
+            }
+        });
+
+        jLabel3.setText("Domain Id: ");
+
+        jLabel4.setText("Search:");
+
+        jMenuBar1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(172, 172, 172)));
 
         jMenu1.setText("File");
 
         jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_L, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem1.setFont(new java.awt.Font("Gulim", 0, 12)); // NOI18N
         jMenuItem1.setText("Login");
+        jMenuItem1.setToolTipText("Login to Agilix");
+        jMenuItem1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
         jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem1ActionPerformed(evt);
@@ -160,9 +190,30 @@ public class LinkGUI extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem1);
 
+        jMenuItem3.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem3.setText("Get");
+        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem3ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem3);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Help");
+
+        jMenuItem2.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem2.setFont(new java.awt.Font("Gulim", 0, 12)); // NOI18N
+        jMenuItem2.setText("About");
+        jMenuItem2.setToolTipText("About this product");
+        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem2ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem2);
+
         jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
@@ -172,73 +223,62 @@ public class LinkGUI extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addGap(21, 21, 21)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(21, 21, 21)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(step2)
-                            .addComponent(step1)
-                            .addComponent(step3))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel4))
                         .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(domainid)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(search, javax.swing.GroupLayout.PREFERRED_SIZE, 273, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(layout.createSequentialGroup()
+                                .addComponent(domainid, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(loginBtn)
-                                .addGap(0, 101, Short.MAX_VALUE)))
-                        .addGap(18, 18, 18)
-                        .addComponent(domainBtn))
+                                .addGap(14, 14, 14)
+                                .addComponent(domainBtn))))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                            .addComponent(auditBtn)
+                            .addGap(39, 39, 39)
+                            .addComponent(sniffProgress, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(pickScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 403, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(21, 21, 21)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(pickScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(step4)
-                                .addGap(18, 18, 18)
-                                .addComponent(auditBtn))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(114, 114, 114)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 145, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(sniffProgress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 73, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 342, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(121, 121, 121)))
                 .addGap(25, 25, 25))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
                         .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 460, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 373, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(15, 15, 15)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(step1)
+                            .addComponent(jLabel3)
+                            .addComponent(domainid, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(domainBtn)
                             .addComponent(loginBtn))
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(step2)
-                            .addComponent(domainid, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(domainBtn))
-                        .addGap(18, 18, 18)
-                        .addComponent(step3)
-                        .addGap(18, 18, 18)
-                        .addComponent(pickScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 286, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(step4)
-                            .addComponent(auditBtn))
-                        .addGap(11, 11, 11)
-                        .addComponent(jLabel2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(sniffProgress, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(12, 12, 12)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(search, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel4))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(pickScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 309, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(auditBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(sniffProgress, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap())))
         );
 
         pack();
@@ -255,26 +295,16 @@ public class LinkGUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_loginBtnActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        // TODO add your handling code here:
-        if (!loginPopup()){
-            this.displayArea.setText("Login Failure");
-        }
-        else{
- 
-        }
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
-
-    private void domainBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_domainBtnActionPerformed
-        // TODO add your handling code here:
+    public void domainBtn(){
         Thread get = new Thread(){
             @Override
             public void run() {
                 if (ls.getDomainCourses(domainid.getText())){
                     allCourses = ls.getAllCourses();
                     displayArea.setText("");
-                    addToList();
+                    addToList("");
                     repaint();
+                    search.requestFocus();
                 }
                 else{
                     displayArea.setText("Invalid Domain Id");
@@ -282,11 +312,25 @@ public class LinkGUI extends javax.swing.JFrame {
             }  
         };
         get.start();
-        displayArea.setText("Getting Courses...");       
+        displayArea.setText("Getting Courses...");
+    }
+    
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // TODO add your handling code here:
+        if (!loginPopup()){
+            this.displayArea.setText("Login Failure");
+        }
+        else{
+            this.displayArea.setText("Welcome to Link Sniffer, " + ls.getUser());
+        }
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void domainBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_domainBtnActionPerformed
+        // TODO add your handling code here:
+        domainBtn();     
     }//GEN-LAST:event_domainBtnActionPerformed
 
-    private void auditBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_auditBtnActionPerformed
-        // TODO add your handling code here:
+    public void startProcess(){
         this.ls.reset();
         final String courseid = this.pickCourse.getSelectedValue().toString().split("::")[1];
         final Thread audit = new Thread(){
@@ -296,6 +340,7 @@ public class LinkGUI extends javax.swing.JFrame {
                 ls.run();
                 showBroken(ls.displayBrokenLinks());
                 this.interrupt();
+                auditBtn.setEnabled(true);
             }  
         };  
         Thread prog = new Thread(){
@@ -308,9 +353,15 @@ public class LinkGUI extends javax.swing.JFrame {
                 }
             }  
         };
+        this.auditBtn.setEnabled(false);
         audit.start();
         prog.start();
         displayArea.setText("Auditing course, please wait...");
+    }
+    
+    private void auditBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_auditBtnActionPerformed
+        // TODO add your handling code here:
+        startProcess();
     }//GEN-LAST:event_auditBtnActionPerformed
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
@@ -319,23 +370,53 @@ public class LinkGUI extends javax.swing.JFrame {
 
     private void domainidActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_domainidActionPerformed
         // TODO add your handling code here:
-        Thread get = new Thread(){
-            @Override
-            public void run() {
-                if (ls.getDomainCourses(domainid.getText())){
-                    allCourses = ls.getAllCourses();
-                    displayArea.setText("");
-                    addToList();
-                    repaint();
-                }
-                else{
-                    displayArea.setText("Invalid Domain Id");
-                }
-            }  
-        };
-        get.start();
-        displayArea.setText("Getting Courses...");
+        domainBtn();
     }//GEN-LAST:event_domainidActionPerformed
+
+    private void searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchActionPerformed
+        // TODO add your handling code here:
+        
+    }//GEN-LAST:event_searchActionPerformed
+
+    private void searchKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_searchKeyTyped
+        // TODO add your handling code here:
+        addToList(this.search.getText());
+    }//GEN-LAST:event_searchKeyTyped
+
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        // TODO add your handling code here:
+        JOptionPane.showMessageDialog(null, "Created by: Chase Willden"
+                + "\nFor Professional Use Only."
+                + "\nTechnologies used:"
+                + "\n   JSoup - HTML parser");
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        // TODO add your handling code here:
+        domainBtn();
+    }//GEN-LAST:event_jMenuItem3ActionPerformed
+
+    private void searchKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_searchKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == 40 || evt.getKeyCode() == 38){
+            this.pickCourse.setSelectedIndex(0);
+            this.pickCourse.requestFocus();
+        }
+    }//GEN-LAST:event_searchKeyPressed
+
+    private void pickCourseKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_pickCourseKeyPressed
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == 40){
+            this.pickCourse.setSelectedIndex(this.selected++);
+            
+        }
+        if (evt.getKeyCode() == 38){
+            this.pickCourse.setSelectedIndex(this.selected--);
+        }
+        if (evt.getKeyCode() == 10){
+            startProcess();
+        }
+    }//GEN-LAST:event_pickCourseKeyPressed
 
     public void showBroken(String brokens){
         
@@ -350,10 +431,18 @@ public class LinkGUI extends javax.swing.JFrame {
         
     }
     
-    public void addToList(){
+    public void addToList(String filter){
         final String[] strings = new String[this.allCourses.size()];
+        int next = 0;
         for (int i = 0; i < this.allCourses.size(); i++){
-            strings[i] = this.allCourses.get(i).toString();
+            if (filter.isEmpty()){
+                strings[next++] = this.allCourses.get(i).toString();
+            }
+            else{
+                if (this.allCourses.get(i).toString().toLowerCase().indexOf(filter.toLowerCase()) != -1){
+                    strings[next++] = this.allCourses.get(i).toString();
+                }                
+            }
         }
         pickCourse.setModel(new javax.swing.AbstractListModel() {
             @Override
@@ -399,21 +488,19 @@ public class LinkGUI extends javax.swing.JFrame {
     private javax.swing.JButton domainBtn;
     private javax.swing.JTextField domainid;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JButton loginBtn;
     private javax.swing.JList pickCourse;
     private javax.swing.JScrollPane pickScroll;
+    private javax.swing.JTextField search;
     private javax.swing.JProgressBar sniffProgress;
-    private javax.swing.JLabel step1;
-    private javax.swing.JLabel step2;
-    private javax.swing.JLabel step3;
-    private javax.swing.JLabel step4;
     // End of variables declaration//GEN-END:variables
 }

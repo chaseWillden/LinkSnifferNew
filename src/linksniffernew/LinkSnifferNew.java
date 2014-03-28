@@ -9,10 +9,9 @@
 package linksniffernew;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -354,7 +353,11 @@ public class LinkSnifferNew {
 
         if (address.contains("[~]")) {
             this.totalInt++;
-            String newForm = "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=assets" + address.split("]")[1];
+            String path = address.split("]")[1];
+            if (address.split("]")[1].contains("?")){
+                path = address.split("]")[1].split("\\?")[0];
+            }
+            String newForm = "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=assets" + path;
             return newForm;
         } else if (address.contains("javascript:")) {
             this.totalInt++;
@@ -370,6 +373,9 @@ public class LinkSnifferNew {
         }
         else if (address.substring(0, 2).contains("//")){
             return "http:" + address;
+        }
+        else if (!address.contains("://")){
+            return "http://" + address;
         }
         else{
             return address;
@@ -392,9 +398,8 @@ public class LinkSnifferNew {
         display += "\nTotal total external links: " + this.totalExt;
         display += "\nTotal total internal links: " + this.totalInt;
         display += "\nTotal Images: " + this.totalImg;
-        
         if (this.brokenLinks.isEmpty()) {
-            return "\n==== No broken links";
+            return display + "\n\n==== No broken links";
         }
         display += "\n\n==== Broken Links:";
         display += "\nTotal broken links: " + this.brokenLinks.size() + "\n";
@@ -435,7 +440,7 @@ public class LinkSnifferNew {
     public boolean isRunning() {
         return this.isRunning;
     }
-
+    
     public void run() {
         Document cil = getCourseItemList();
         this.totalItems = cil.getElementsByTag("item").size();
@@ -465,7 +470,7 @@ public class LinkSnifferNew {
         } else {
             System.out.println(display);
         }
-        this.isRunning = false;
+        this.isRunning = false;        
     }
 
     public List getAllCourses() {
