@@ -7,8 +7,11 @@
 package linksniffernew;
 
 import java.awt.GridLayout;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -17,6 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.ListModel;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
+import org.jsoup.Jsoup;
 
 /**
  *
@@ -100,6 +104,7 @@ public class LinkGUI extends javax.swing.JFrame {
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMenuItem2 = new javax.swing.JMenuItem();
+        jMenuItem4 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -214,6 +219,14 @@ public class LinkGUI extends javax.swing.JFrame {
         });
         jMenu2.add(jMenuItem2);
 
+        jMenuItem4.setText("Shorcuts");
+        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem4ActionPerformed(evt);
+            }
+        });
+        jMenu2.add(jMenuItem4);
+
         jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
@@ -244,12 +257,10 @@ public class LinkGUI extends javax.swing.JFrame {
                             .addGap(39, 39, 39)
                             .addComponent(sniffProgress, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addComponent(pickScroll, javax.swing.GroupLayout.PREFERRED_SIZE, 356, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 403, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 342, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(121, 121, 121)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 68, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(25, 25, 25))
         );
         layout.setVerticalGroup(
@@ -292,6 +303,9 @@ public class LinkGUI extends javax.swing.JFrame {
         }
         else{
             this.displayArea.setText("Welcome to Link Sniffer, " + ls.getUser());
+            this.domainid.setEnabled(true);
+            this.auditBtn.setEnabled(true);
+            this.domainid.requestFocus();
         }
     }//GEN-LAST:event_loginBtnActionPerformed
 
@@ -322,6 +336,9 @@ public class LinkGUI extends javax.swing.JFrame {
         }
         else{
             this.displayArea.setText("Welcome to Link Sniffer, " + ls.getUser());
+            this.domainid.setEnabled(true);
+            this.auditBtn.setEnabled(true);
+            this.domainid.requestFocus();
         }
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
@@ -356,7 +373,7 @@ public class LinkGUI extends javax.swing.JFrame {
         this.auditBtn.setEnabled(false);
         audit.start();
         prog.start();
-        displayArea.setText("Auditing course, please wait...");
+        displayArea.setText("Auditing course, please wait...\n\nWhile you wait, you can count how many times you blink.");
     }
     
     private void auditBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_auditBtnActionPerformed
@@ -366,6 +383,8 @@ public class LinkGUI extends javax.swing.JFrame {
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         // TODO add your handling code here:
+        this.domainid.setEnabled(false);
+        this.auditBtn.setEnabled(false);
     }//GEN-LAST:event_formWindowOpened
 
     private void domainidActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_domainidActionPerformed
@@ -381,6 +400,7 @@ public class LinkGUI extends javax.swing.JFrame {
     private void searchKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_searchKeyTyped
         // TODO add your handling code here:
         addToList(this.search.getText());
+        this.selected = 0;
     }//GEN-LAST:event_searchKeyTyped
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
@@ -417,6 +437,16 @@ public class LinkGUI extends javax.swing.JFrame {
             startProcess();
         }
     }//GEN-LAST:event_pickCourseKeyPressed
+
+    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+        // TODO add your handling code here:
+        String text = "=== Available Shortcuts ===\n";
+        text += "\nCtrl+L    - Login";
+        text += "\nCtrl+G    - Get Courses from Domain Id";
+        text += "\nDown      - Go down through courses list";
+        text += "\nUp      - Go up through courses list";
+        this.displayArea.setText(text);
+    }//GEN-LAST:event_jMenuItem4ActionPerformed
 
     public void showBroken(String brokens){
         
@@ -496,6 +526,7 @@ public class LinkGUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton loginBtn;
     private javax.swing.JList pickCourse;

@@ -11,7 +11,6 @@ package linksniffernew;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +52,7 @@ public class LinkSnifferNew {
     private int totalExt = 0;
     private int totalInt = 0;
     private int totalImg = 0;
+    private int totalDlap = 0;
     private double totalItems = 0.0;
     private double progress = 1.0;
     private boolean isRunning = false;
@@ -160,7 +160,7 @@ public class LinkSnifferNew {
         }
         try {
             result = session.Login(prefix, username, password);
-            
+            this.totalDlap++;
             System.out.println(result);
         } catch (ParserConfigurationException | TransformerException | IOException | SAXException ex) {
             Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
@@ -197,6 +197,7 @@ public class LinkSnifferNew {
         params.put("path", path);
         try {
             Document r = session.Get("getresource", params);
+            this.totalDlap++;
             if (r == null) {
                 return null;
             }
@@ -214,6 +215,7 @@ public class LinkSnifferNew {
     public void logout() {
         try {
             this.session.Logout();
+            this.totalDlap++;
         } catch (TransformerException | IOException | ParserConfigurationException | SAXException ex) {
             Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -264,7 +266,7 @@ public class LinkSnifferNew {
                 String url = formatUrl(hrefList.get(i).toString(), true);
                 if (!pingUrl(url)) {
                     String a = "\n\nurl: " + url;
-                    a += "\nLocation: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
+                    a += "\nLocation url: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
                     this.brokenLinks.add(a);
                 }
             }
@@ -275,7 +277,7 @@ public class LinkSnifferNew {
                 String url = formatUrl(srcList.get(i).toString(), true);
                 if (!pingUrl(url)) {
                     String a = "\n\nurl: " + url;
-                    a += "\nLocation: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
+                    a += "\nLocation url: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
                     this.brokenLinks.add(a);
                 }
             }
@@ -309,6 +311,7 @@ public class LinkSnifferNew {
         session.setIsHtml(true);
         try {
             this.dCourseItemList = session.Get("getitemlist", getitemlist);
+            this.totalDlap++;
         } catch (TransformerException | IOException | ParserConfigurationException | SAXException ex) {
             Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -338,6 +341,40 @@ public class LinkSnifferNew {
         return this.dCourseActivityDOM;
     }
 
+    public String bhLink(String id){
+        Map<String, String> params = new HashMap<>();
+        params.put("entityid", baseCourseid);
+        params.put("itemid", id);
+        try {
+            Document all = session.Get("getitem", params);
+            this.totalDlap++;
+            if (all.getElementsByTag("href") == null || all.getElementsByTag("href").size() < 1){
+                return "https://google.com";
+            }
+            String href = "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=" + all.getElementsByTag("href").get(0).text();
+            Map<String, String> newParams = new HashMap<>();
+            newParams.put("entityid", baseCourseid);
+            newParams.put("path", all.getElementsByTag("href").get(0).text());
+            Document a = session.Get("getresource", newParams);
+            this.totalDlap++;
+            if (a == null){
+                return "https://google.com/chase.html";
+            }            
+            if (a.getElementById("header") != null){
+                if (a.getElementById("header").toString().contains("Error")){
+                    return "https://google.com";
+                }
+            }
+            else{
+                // The link worked, but I didn't want to figure this out, it works.
+                return "https://google.com";
+            }
+        }   catch (TransformerException | IOException | ParserConfigurationException | SAXException ex) {
+            Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
     /**
      * Formats the URL to http or https then returns the new formatted url
      * <!-- begin-user-doc -->
@@ -364,6 +401,7 @@ public class LinkSnifferNew {
             if (address.contains("navToItem")){
                 String id = address.split("'")[1];                
                 id = id.split("'")[0];
+                bhLink(id);
                 return "http://gls.agilix.com/dlap.ashx?cmd=getresource&entityid=" + baseCourseid + "&path=Templates/Data/" + id + "/index.html";
             }
             return "https://bing.com";
@@ -395,6 +433,7 @@ public class LinkSnifferNew {
         // TODO : to implement
         String display = "\n==== Analytics:";
         display += "\nTotal Links Pinged: " + this.totalPinged;
+        display += "\nTotal Dlap Calls: " + this.totalDlap;
         display += "\nTotal total external links: " + this.totalExt;
         display += "\nTotal total internal links: " + this.totalInt;
         display += "\nTotal Images: " + this.totalImg;
@@ -422,6 +461,7 @@ public class LinkSnifferNew {
         params.put("limit", "0");
         try {
             Document all = session.Get("listcourses", params);
+            this.totalDlap++;
             if (all.getElementsByTag("response").get(0).attr("code").equals("OK")) {
                 Elements courses = all.getElementsByTag("course");
                 for (Element course : courses) {
@@ -448,7 +488,7 @@ public class LinkSnifferNew {
         Elements items = cil.getElementsByTag("item");
         for (Element item : items) {
             this.progress++;
-            System.out.println("Progress" + progress() + "%");
+            System.out.println("Progress: " + progress() + "%");
             Elements typeTag = item.getElementsByTag("type");
             if (!typeTag.isEmpty()) {
                 String itemType = typeTag.get(0).text();
