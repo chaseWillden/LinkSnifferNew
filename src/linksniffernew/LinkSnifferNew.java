@@ -58,6 +58,7 @@ public class LinkSnifferNew {
     private boolean isRunning = false;
     private String baseCourseid = "";
     private String uName = "";
+    private boolean interrupt = false;
 
     /**
      * <!-- begin-user-doc -->
@@ -266,6 +267,8 @@ public class LinkSnifferNew {
                 String url = formatUrl(hrefList.get(i).toString(), true);
                 if (!pingUrl(url)) {
                     String a = "\n\nurl: " + url;
+                    a += "\nLink Text: " + hrefs.get(i).text();
+                    a += "\nLink: " + hrefs.get(i).attr("href");
                     a += "\nLocation url: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
                     this.brokenLinks.add(a);
                 }
@@ -277,6 +280,8 @@ public class LinkSnifferNew {
                 String url = formatUrl(srcList.get(i).toString(), true);
                 if (!pingUrl(url)) {
                     String a = "\n\nurl: " + url;
+                    a += "\nLink Text: " + srcs.get(i).text();
+                    a += "\nLink: " + srcs.get(i).attr("src");
                     a += "\nLocation url: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
                     this.brokenLinks.add(a);
                 }
@@ -355,10 +360,14 @@ public class LinkSnifferNew {
             Map<String, String> newParams = new HashMap<>();
             newParams.put("entityid", baseCourseid);
             newParams.put("path", all.getElementsByTag("href").get(0).text());
-            Document a = session.Get("getresource", newParams);
+            if (all.getElementsByTag("href").get(0).text().contains("://")){
+                return all.getElementsByTag("href").get(0).text();
+            }
+            Document a = session.Get("getresource", newParams);            
             this.totalDlap++;
             if (a == null){
                 // Broken on purpose
+                System.out.println(all.toString());
                 return "https://google.com/brokenOnPurpose.html";
             }            
             if (a.getElementById("header") != null){
@@ -493,18 +502,33 @@ public class LinkSnifferNew {
         return this.isRunning;
     }
     
+    public void setWait(){
+        try {
+            while(this.interrupt){
+                Thread.sleep(10);
+            }
+        } catch (InterruptedException ex) {
+            Logger.getLogger(LinkSnifferNew.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void setInterrupt(boolean i){
+        this.interrupt = i;
+    }
+    
     public void run() {
         Document cil = getCourseItemList();
         this.totalItems = cil.getElementsByTag("item").size();
         this.isRunning = true;
         Elements items = cil.getElementsByTag("item");
         for (Element item : items) {
+            setWait();
             this.progress++;
             System.out.println("Progress: " + progress() + "%");
             Elements typeTag = item.getElementsByTag("type");
             if (!typeTag.isEmpty()) {
                 String itemType = typeTag.get(0).text();
-                if (itemType.contains("Resource")) {
+                if (itemType.contains("Resource") || itemType.contains("Assignment") || itemType.contains("Discussion") || itemType.contains("Homework")) {
                     String entityid = item.attr("resourceentityid").split(",")[0];
                     String path = item.getElementsByTag("href").text();
                     String id = item.attr("id");
@@ -512,6 +536,15 @@ public class LinkSnifferNew {
                     if (content != null) {
                         processBrokenLinks(content, id);
                         getImages(content, id);
+                    }
+                }
+                else if(itemType.contains("AssetLink")){
+                    String url = item.getElementsByTag("href").get(0).text();
+                    if (!pingUrl(url)) {
+                        String a = "\n\nurl: " + url;
+                        String activity = item.attr("id");
+                        a += "\nLocation url: https://byui.brainhoney.com/Frame/Component/CoursePlayer?enrollmentid=" + this.baseCourseid + "&itemid=" + activity;
+                        this.brokenLinks.add(a);
                     }
                 }
             }
