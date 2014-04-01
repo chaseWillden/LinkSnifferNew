@@ -386,6 +386,7 @@ public class LinkGUI extends javax.swing.JFrame {
                 showBroken(ls.displayBrokenLinks());
                 this.interrupt();
                 auditBtn.setEnabled(true);
+                displayArea.setEnabled(true);
             }  
         };  
         prog = new Thread(){
